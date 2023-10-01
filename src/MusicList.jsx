@@ -11,7 +11,7 @@ import {useContext,memo} from "react";
 import {MainContext} from "./App";
 
 const SingleMusic = memo(({music,togglePlayPause}) => {
-  console.log("SingleMusic");
+  console.log("App > MusicList > SingleMusic");
     return(
         <ListItem sx={{p:2}} secondaryAction={
             <IconButton sx={{p:2}} onClick={() => togglePlayPause(music)} edge="end" aria-label="play-pause">
@@ -27,12 +27,13 @@ const SingleMusic = memo(({music,togglePlayPause}) => {
 })
 
 const MusicList = () => {
-    console.log("MusicList");
+    console.log("App > MusicList");
     const {mode,musics,togglePlayPause} = useContext(MainContext);
     return(
       <Box
         sx={{
-        maxWidth: 600,
+        width: '95%',
+        maxWidth:600,
         margin:'20px auto',
         borderRadius: '5px',
         bgcolor: mode === 'dark' ? 'black':'aliceblue'

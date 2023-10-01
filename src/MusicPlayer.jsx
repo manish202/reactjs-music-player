@@ -50,12 +50,9 @@ const formatDuration = (value) => {
     return `${minute}:${secondLeft < 10 ? `0${secondLeft}` : secondLeft}`;
 }
 
-const MusicPlayer = () => {
-    console.log("MusicPlayer");
-    const {mode,musics,togglePlayPause} = useContext(MainContext);
-    const audioRef = useRef();
+const MusicPlayerSlider = memo(({audioRef,mode,cur_music,changeSong}) => {
+    console.log("App > MusicPlayer > MusicPlayerSlider");
     const [currentPosition, setCurrentPosition] = useState(0);
-    const cur_music = musics.filter(obj => ['play','pause'].includes(obj.playState))[0] || musics[0];
     useEffect(() => {
         const audio = audioRef.current;
         const handleTimeUpdate = () => setCurrentPosition(audio.currentTime);
@@ -67,16 +64,78 @@ const MusicPlayer = () => {
     useEffect(() => {
         const audio = audioRef.current;
         cur_music.playState == 'play' ? audio.play(): audio.pause();
+        const handelNextMusic = () => changeSong("next");
+        audio.addEventListener('ended',handelNextMusic);
+        return () => {
+            audio.removeEventListener('ended', handelNextMusic);
+        }
     },[cur_music]);
     let duration = audioRef.current ? audioRef.current.duration : 0;
     duration = !isNaN(duration) ? duration:0;
-    let [mainIconColor,lightIconColor] = mode === 'dark' ? ['#fff','rgba(255,255,255,0.4)']:['#000','rgba(0,0,0,0.4)'];
     const seekTo = (positionInSeconds) => {
         if(audioRef.current){
             audioRef.current.currentTime = positionInSeconds;
             setCurrentPosition(positionInSeconds);
         }
     };
+    return(
+        <>
+            <Slider
+                aria-label="time-indicator"
+                size="small"
+                value={currentPosition}
+                min={0}
+                step={1}
+                max={duration}
+                onChange={(_, value) => seekTo(value)}
+                sx={{
+                    color: mode === 'dark' ? '#fff' : 'rgba(0,0,0,0.87)',
+                    height: 4,
+                    '& .MuiSlider-thumb': {
+                    width: 8,
+                    height: 8,
+                    transition: '0.3s cubic-bezier(.47,1.64,.41,.8)',
+                    '&:before': {
+                        boxShadow: '0 2px 12px 0 rgba(0,0,0,0.4)',
+                    },
+                    '&:hover, &.Mui-focusVisible': {
+                        boxShadow: `0px 0px 0px 8px ${
+                        mode === 'dark'
+                            ? 'rgb(255 255 255 / 16%)'
+                            : 'rgb(0 0 0 / 16%)'
+                        }`,
+                    },
+                    '&.Mui-active': {
+                        width: 20,
+                        height: 20,
+                    },
+                    },
+                    '& .MuiSlider-rail': {
+                    opacity: 0.28,
+                    },
+                }}
+            />
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    mt: -2,
+                }}
+                >
+                <TinyText>{formatDuration(currentPosition)}</TinyText>
+                <TinyText>-{formatDuration(duration - currentPosition)}</TinyText>
+            </Box>
+        </>
+    )
+})
+
+const MusicPlayer = () => {
+    console.log("App > MusicPlayer");
+    const {mode,musics,togglePlayPause} = useContext(MainContext);
+    const audioRef = useRef();
+    const cur_music = musics.filter(obj => ['play','pause'].includes(obj.playState))[0] || musics[0];
+    let [mainIconColor,lightIconColor] = mode === 'dark' ? ['#fff','rgba(255,255,255,0.4)']:['#000','rgba(0,0,0,0.4)'];
     const updateVolume = (e,val) => {
         audioRef.current.volume = val/100;
     }
@@ -92,7 +151,7 @@ const MusicPlayer = () => {
         togglePlayPause(musics[ind]);
     }
     return(
-        <Box sx={{ width: '100%', overflow: 'hidden', m:'20px auto' }}>
+        <Box sx={{ width: '95%', overflow: 'hidden', m:'20px auto' }}>
             <Widget>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <CoverImage>
@@ -107,52 +166,7 @@ const MusicPlayer = () => {
                         </Typography>
                     </Box>
                 </Box>
-                <Slider
-                    aria-label="time-indicator"
-                    size="small"
-                    value={currentPosition}
-                    min={0}
-                    step={1}
-                    max={duration}
-                    onChange={(_, value) => seekTo(value)}
-                    sx={{
-                        color: mode === 'dark' ? '#fff' : 'rgba(0,0,0,0.87)',
-                        height: 4,
-                        '& .MuiSlider-thumb': {
-                        width: 8,
-                        height: 8,
-                        transition: '0.3s cubic-bezier(.47,1.64,.41,.8)',
-                        '&:before': {
-                            boxShadow: '0 2px 12px 0 rgba(0,0,0,0.4)',
-                        },
-                        '&:hover, &.Mui-focusVisible': {
-                            boxShadow: `0px 0px 0px 8px ${
-                            mode === 'dark'
-                                ? 'rgb(255 255 255 / 16%)'
-                                : 'rgb(0 0 0 / 16%)'
-                            }`,
-                        },
-                        '&.Mui-active': {
-                            width: 20,
-                            height: 20,
-                        },
-                        },
-                        '& .MuiSlider-rail': {
-                        opacity: 0.28,
-                        },
-                    }}
-                />
-                <Box
-                    sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        mt: -2,
-                    }}
-                    >
-                    <TinyText>{formatDuration(currentPosition)}</TinyText>
-                    <TinyText>-{formatDuration(duration - currentPosition)}</TinyText>
-                </Box>
+                <MusicPlayerSlider changeSong={changeSong} cur_music={cur_music} mode={mode} audioRef={audioRef} />
                 <Box
                     sx={{
                         display: 'flex',
